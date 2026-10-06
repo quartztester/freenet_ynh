@@ -1,7 +1,6 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-ynh_abort_if_errors
 
 if [ "$path" != "/" ]; then
     ynh_die --message="The Freenet dashboard UI uses absolute URLs and only works at the root of a domain (path must be '/')."

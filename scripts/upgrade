@@ -1,7 +1,6 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-ynh_abort_if_errors
 
 ynh_script_progression "Re-rendering compose config and systemd unit..."
 ynh_safe_rm "$install_dir/docker-compose.yml"
@@ -15,8 +14,8 @@ if [ -n "${domain:-}" ]; then
     ynh_safe_rm "/etc/nginx/conf.d/$domain.d/$app.conf"
     ynh_config_add_nginx
 fi
-if [ -f "$YNH_APP_BASEDIR/conf/freenet.png" ]; then
-    cp "$YNH_APP_BASEDIR/conf/freenet.png" "/usr/share/yunohost/applogos/$app.png"
+if [ -f "$YNH_APP_BASEDIR/doc/freenet.png" ]; then
+    cp "$YNH_APP_BASEDIR/doc/freenet.png" "/usr/share/yunohost/applogos/$app.png"
     yunohost user permission update "$app.main" --logo "/usr/share/yunohost/applogos/$app.png" || true
 fi
 

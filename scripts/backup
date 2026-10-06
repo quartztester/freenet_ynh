@@ -1,7 +1,7 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-ynh_script_progression "Backing up Freenet node identity and data (volume ${app}-data)..."
+ynh_print_info "Backing up Freenet node identity and data (volume ${app}-data)..."
 # Tar the named volume so node identity/history survives a restore.
 # NB: helpers v2.1 runs collect scripts with cwd = staging dir and NO
 # $BACKUP_DIR — write the archive as a relative path.
