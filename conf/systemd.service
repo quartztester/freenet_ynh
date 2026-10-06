@@ -1,33 +1,85 @@
 [Unit]
 Description=Freenet node (app: __APP__)
-Documentation=https://freenet.org/quickstart/docker/
-After=docker.service
-Requires=docker.service
+Documentation=https://freenet.org/quickstart/
+After=network-online.target
+Wants=network-online.target
+
+# Crash-loop rate limiting, mirroring upstream's own generated unit
+# (crates/core/src/bin/commands/service/linux.rs): a tight no-fix loop
+# terminal-stops the unit after 5 starts in 120s. Recover with
+# systemctl reset-failed __APP__ && systemctl start __APP__.
+StartLimitBurst=5
+StartLimitIntervalSec=120
+StartLimitAction=none
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
+Type=simple
+User=__APP__
+Group=__APP__
 WorkingDirectory=__INSTALL_DIR__
-ExecStart=/usr/bin/docker compose up -d
-ExecStop=/usr/bin/docker compose down
-TimeoutStartSec=300
+# The node keeps updater/rollback state under $HOME with no flag to move it;
+# point HOME into the data dir so it persists (upstream's container entrypoint
+# does the same for the same reason).
+Environment=HOME=__DATA_DIR__/home
+Environment=FREENET_SUPERVISED=1
+Environment=FREENET_SYSTEMD_FAST_CRASH=1
+# Stale-orphan self-heal from upstream's unit (freenet-core #3967): kill an
+# init-adopted orphan 'freenet network' running a different version before
+# starting. (Escaping: $$ = literal $ for the shell, {{ }} = literal { }.)
+ExecStartPre=-/bin/sh -c 'self=$$$$; ondisk=$$(timeout 5 __INSTALL_DIR__/freenet --version 2>/dev/null | grep "^Freenet version:"); for pid in $$(pgrep -f -u "$$(id -u)" "freenet network" 2>/dev/null); do [ "$$pid" = "$$self" ] && continue; [ "$$pid" = "1" ] && continue; exe=$$(readlink -f /proc/$$pid/exe 2>/dev/null); hv=""; [ -x "$$exe" ] && hv=$$(timeout 5 "$$exe" --version 2>/dev/null | grep "^Freenet version:"); ppid=$$(sed "s/.*) //" /proc/$$pid/stat 2>/dev/null | awk "{{print \$$2}}"); mismatch=1; [ -n "$$ondisk" ] && [ -n "$$hv" ] && [ "$$hv" != "$$ondisk" ] && mismatch=0; if [ "$$ppid" = "1" ] && {{ [ "$$mismatch" = "0" ] || [ -z "$$hv" ]; }}; then kill -TERM "$$pid" 2>/dev/null || true; w=0; while kill -0 "$$pid" 2>/dev/null && [ $$w -lt 12 ]; do sleep 1; w=$$((w+1)); done; kill -0 "$$pid" 2>/dev/null && kill -KILL "$$pid" 2>/dev/null || true; fi; done'
+# Flags pin the ports resources + proxy hostname: config.toml is strictly
+# schema-validated (a partial hand-written seed fails), so we let the node
+# generate its own full config and control the few keys we own via flags,
+# which the node also persists into the generated config.
+ExecStart=__INSTALL_DIR__/freenet network --config-dir __DATA_DIR__/config --data-dir __DATA_DIR__/node --network-port __PORT_PEER__ --ws-api-address ::1 --ws-api-port __PORT__ --allowed-host __DOMAIN__
+Restart=always
+RestartSec=10
+RestartSteps=10
+RestartMaxDelaySec=300
+# Node drains in-flight work up to 30s on SIGTERM; 15s headroom (upstream).
+TimeoutStopSec=45
+# 42 = "new release available, restart me"; 43 = "another instance already
+# holds the port" (not an error, but do not restart-loop on it).
+SuccessExitStatus=42 43
+RestartPreventExitStatus=43
+# Self-heal updater, same contract as upstream's unit: on ANY exit except 0
+# (clean stop) and 43, run `freenet update` — it steps forward on exit 42/45
+# and rolls back bad self-updates during crash probation. '-' prefix so its
+# own result never blocks the restart.
+ExecStopPost=-/bin/sh -c 'case "$$SERVICE_RESULT $$EXIT_CODE" in "success killed") exit 0 ;; esac; case "$$EXIT_STATUS" in 0|43) ;; *) FREENET_POST_STOP_EXIT_CODE="$$EXIT_STATUS" __INSTALL_DIR__/freenet update --quiet ;; esac'
 
-
-### Sandboxing baseline for a docker-CLI wrapper unit.
-### NB: no User= here on purpose — this unit only talks to the docker socket,
-### which YunoHost admins reach as root/docker-group; running the CLI as the
-### unprivileged app user would break container management. The container
-### itself drops privileges internally.
+### Sandboxing baseline (example_ynh; leading-space style per its file).
+### Deviation: the node's self-updater replaces the binary in place
+### (temp+rename in install_dir) and it writes only its data dir otherwise,
+### so those two paths are explicitly writable despite ProtectSystem=full.
 NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=full
-ProtectControlGroups=yes
-ProtectKernelTunables=yes
-ProtectHome=yes
+ PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictNamespaces=yes
 RestrictRealtime=yes
+DevicePolicy=closed
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProtectSystem=full
+ReadWritePaths=__INSTALL_DIR__ __DATA_DIR__
+ProtectControlGroups=yes
+ ProtectKernelModules=yes
+ProtectKernelTunables=yes
 LockPersonality=yes
 SystemCallArchitectures=native
-CapabilityBoundingSet=~CAP_SYS_BOOT CAP_SYS_MODULE CAP_SYS_PACCT
+ SystemCallFilter=@system-service
+SystemCallFilter=~@clock @debug @module @mount @obsolete @reboot @setuid @swap @cpu-emulation @privileged
+
+ CapabilityBoundingSet=~CAP_RAWIO CAP_MKNOD
+CapabilityBoundingSet=~CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_AUDIT_WRITE
+CapabilityBoundingSet=~CAP_SYS_BOOT CAP_SYS_TIME CAP_SYS_MODULE CAP_SYS_PACCT
+CapabilityBoundingSet=~CAP_LEASE CAP_LINUX_IMMUTABLE CAP_IPC_LOCK
+CapabilityBoundingSet=~CAP_BLOCK_SUSPEND CAP_WAKE_ALARM
+CapabilityBoundingSet=~CAP_SYS_TTY_CONFIG
+CapabilityBoundingSet=~CAP_MAC_ADMIN CAP_MAC_OVERRIDE
+CapabilityBoundingSet=~CAP_SYS_ADMIN CAP_SYS_PTRACE CAP_SYSLOG
 
 [Install]
 WantedBy=multi-user.target

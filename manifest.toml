@@ -2,9 +2,9 @@ packaging_format = 2
 
 id = "freenet"
 name = "Freenet node"
-description.en = "Volunteer peer for the Freenet network (dashboard on an SSO-gated panel)"
+description.en = "Volunteer peer for the Freenet decentralized network"
 
-version = "0.2.142~ynh1"
+version = "0.2.142~ynh2"
 
 maintainers = []
 
@@ -12,19 +12,19 @@ maintainers = []
 license = "GPL-2.0-or-later"
 website = "https://freenet.org"
 code = "https://github.com/freenet/freenet-core"
-admindoc = "https://freenet.org/quickstart/docker/"
+admindoc = "https://freenet.org/quickstart/"
 
 [integration]
 yunohost = ">= 12.0"
 helpers_version = "2.1"
-# Official image is published for linux/amd64 and linux/arm64 only.
+# Official release binaries exist for linux x86_64 and aarch64.
 architectures = ["amd64", "arm64"]
 multi_instance = false
 ldap = "not_relevant"
 sso = "not_relevant"
-disk = "5G"
-ram.build = "10M"
-ram.runtime = "500M"
+disk = "1G"
+ram.build = "50M"
+ram.runtime = "300M"
 
 [install]
     [install.domain]
@@ -38,26 +38,43 @@ ram.runtime = "500M"
     type = "group"
     default = "all_users"
 
-    [install.peer_port]
-    ask.en = "External peer port (UDP) to forward on your router"
-    help.en = "Freenet peers reach you over this UDP port (default 31337). Forward it on your router to this server, or connectivity stays limited. Skip forwarding if you only want a relay behind NAT — the node still works, just less well."
-    type = "number"
-    default = 31337
-
 [resources]
     [resources.system_user]
 
+    # Holds the node binary. The node's own updater replaces it in place
+    # (temp file + rename on the same filesystem), so this dir must stay
+    # app-writable — see systemd.service.
     [resources.install_dir]
+
+    # Node identity, store and config — losing this loses node identity.
+    # Backed up and restored with the app by convention.
+    [resources.data_dir]
 
     [resources.permissions]
         main.url = "/"
-        # The node dashboard must not receive SSO basic-auth creds;
-        # ssowat still gates the URL itself.
+        # The dashboard talks to its local API on the same origin; ssowat
+        # must not inject Basic creds. SSO still gates the URL.
         main.auth_header = false
 
     [resources.ports]
-    # Dashboard/local API port — always loopback-bound by the node itself,
-    # never exposed. The UDP peer port is opened via 'yunohost firewall allow'
-    # in the scripts (single fixed port, host networking, no bridge mapping).
+    # Dashboard/local API port — loopback-bound by the node, never exposed.
     main.default = 7509
-    main.exposure = "none"
+    # Transport port (UDP, hole-punched). Fixed so admins can set up a
+    # stable router forward; firewall open/close handled by this resource
+    # (setting: $port_peer).
+    peer.default = 31337
+    peer.exposed = "UDP"
+    peer.fixed = true
+
+    [resources.sources.main]
+    # NB: the tarballs contain a single bare 'freenet' file (no directory
+    # prefix), so extraction must NOT strip components.
+    in_subdir = false
+    amd64.url = "https://github.com/freenet/freenet-core/releases/download/v0.2.142/freenet-x86_64-unknown-linux-musl.tar.gz"
+    amd64.sha256 = "b098408bb706bb170970199c19a63faafee7ac2376e760a45cfbbc481be88425"
+    arm64.url = "https://github.com/freenet/freenet-core/releases/download/v0.2.142/freenet-aarch64-unknown-linux-musl.tar.gz"
+    arm64.sha256 = "0494bceaa998b7d8f09c6087051686a552a74aa3a6ceba75b920192d5a7af0e9"
+
+    autoupdate.strategy = "latest_github_release"
+    autoupdate.asset.amd64 = "freenet-x86_64-unknown-linux-musl.tar.gz"
+    autoupdate.asset.arm64 = "freenet-aarch64-unknown-linux-musl.tar.gz"

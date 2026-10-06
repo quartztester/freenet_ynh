@@ -1,22 +1,24 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-ynh_script_progression "Restoring Freenet compose config and systemd unit..."
-ynh_restore "$install_dir/docker-compose.yml"
+ynh_script_progression "Restoring systemd unit and node binary..."
 ynh_safe_rm "/etc/systemd/system/$app.service"
 ynh_restore "/etc/systemd/system/$app.service"
 
-if [ -f "$BACKUP_DIR/${app}-data.tar.gz" ]; then
-    ynh_script_progression "Restoring node identity/data into volume ${app}-data..."
-    docker volume create "${app}-data" >/dev/null 2>&1 || true
-    docker run --rm -v "${app}-data:/data" -v "$BACKUP_DIR:/backup:ro" alpine:latest \
-        sh -c "rm -rf /data/* /data/.[!.]* 2>/dev/null; tar -xzf /backup/${app}-data.tar.gz -C /data"
-    ynh_app_setting_set --key=skip_orphan_backup_alert --value=1
+# Binary was archived at its staged path (cwd during restore is the
+# backup staging dir); installs made before binary backup existed skip it
+# and get the packaged release from the upgrade hook on next app upgrade.
+if [ -f "var/www/$app/freenet" ]; then
+    ynh_restore "$install_dir/freenet"
+    chmod 0755 "$install_dir/freenet"
 fi
+
+ynh_restore "$data_dir"
+chown -R "$app:$app" "$data_dir" "$install_dir"
 
 ynh_script_progression "Restarting Freenet node..."
 systemctl daemon-reload
-systemctl restart "$app" || docker compose -f "$install_dir/docker-compose.yml" up -d
+systemctl restart "$app" || true
 
 # Re-render the custom nginx snippet (not part of the backup archive; on a
 # fresh machine the vhost dir may not even exist yet).

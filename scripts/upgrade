@@ -1,14 +1,24 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
+ynh_script_progression "Installing the packaged node binary..."
+# The node self-updates in place between YunoHost upgrades; this overwrites
+# it with the release pinned by the manifest (downgrade-proof: skip when the
+# on-disk binary is already at least this version).
+packaged_version=$(ynh_app_setting_get --key=version | sed 's/~ynh.*//')
+current_version=$("$install_dir/freenet" --version 2>/dev/null | sed -n 's/^Freenet version: \([^ ]*\).*/\1/p')
+if [ -z "$current_version" ] || [ "$(printf '%s\n%s\n' "$packaged_version" "$current_version" | sort -V | head -n1)" = "$packaged_version" ]; then
+    ynh_setup_source --dest_dir="$install_dir"
+    chmod 0755 "$install_dir/freenet"
+    chown -R "$app:$app" "$install_dir"
+else
+    ynh_print_warn "On-disk node $current_version is newer than packaged $packaged_version (self-update) — keeping it."
+fi
 
-ynh_script_progression "Re-rendering compose config and systemd unit..."
-ynh_safe_rm "$install_dir/docker-compose.yml"
-ynh_config_add --template="docker-compose.yml" --destination="$install_dir/docker-compose.yml"
+ynh_script_progression "Re-rendering systemd and nginx configs..."
 ynh_safe_rm "/etc/systemd/system/$app.service"
 ynh_config_add_systemd
 
-ynh_script_progression "Re-rendering nginx config and refreshing logo..."
 domain=$(ynh_app_setting_get --key=domain || echo "")
 if [ -n "${domain:-}" ]; then
     ynh_safe_rm "/etc/nginx/conf.d/$domain.d/$app.conf"
@@ -19,10 +29,10 @@ if [ -f "$YNH_APP_BASEDIR/doc/freenet.png" ]; then
     yunohost user permission update "$app.main" --logo "/usr/share/yunohost/applogos/$app.png" || true
 fi
 
-# The node self-updates in-place over the network; this pull only refreshes the
-# base image so a fresh container starts current instead of updating on boot.
-ynh_script_progression "Pulling newer image and recreating container (node data volume is preserved)..."
-docker compose -f "$install_dir/docker-compose.yml" pull || ynh_print_warn "Image pull failed (offline?) — continuing with existing image."
+# The ExecStart flags (ports, allowed-host) live in the unit template and
+# are re-rendered above; the node persists them into its own config.toml
+# on next start. Nothing else to pin.
+
 systemctl daemon-reload
 systemctl restart "$app"
 
@@ -35,6 +45,6 @@ while [ "$waited" -lt 300 ]; do
     sleep 5
     waited=$((waited + 5))
 done
-[ "$waited" -ge 300 ] && ynh_print_warn "Dashboard not answering yet after 300s — the node may be mid self-update. Check: docker logs $app"
+[ "$waited" -ge 300 ] && ynh_print_warn "Dashboard not answering yet after 300s — check: journalctl -u $app"
 
 ynh_script_progression "Freenet upgrade complete."

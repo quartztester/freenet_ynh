@@ -1,50 +1,35 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-
 if [ "${path:-/}" != "/" ]; then
-    ynh_die --message="The Freenet dashboard uses absolute URLs and only works at the root of a domain — pick a (sub)domain with path '/'."
-fi
-
-peer_port="${peer_port:-31337}"
-
-if ! systemctl is-active --quiet docker; then
-    ynh_die --message="The docker service is not running. Install/enable docker first (apt install docker.io docker-compose-v2)."
+    ynh_die --message="The Freenet dashboard uses absolute URLs and only works at a domain root — pick a (sub)domain with path '/'."
 fi
 
 #=================================================
-# FIREWALL (peer transport, UDP)
+# NODE BINARY (official GitHub release, static musl)
 #=================================================
-ynh_script_progression "Opening firewall port $peer_port (UDP)..."
-yunohost firewall allow UDP "$peer_port"
+ynh_script_progression "Installing the Freenet node binary..."
+ynh_setup_source --dest_dir="$install_dir"
+# The release tarball stores the binary without the exec bit.
+chmod 0755 "$install_dir/freenet"
+chown -R "$app:$app" "$install_dir"
 
-#=================================================
-# INSTALL FILES
-#=================================================
-ynh_script_progression "Writing compose config (peer UDP port=$peer_port, dashboard port=$port)..."
-ynh_config_add --template="docker-compose.yml" --destination="$install_dir/docker-compose.yml"
+# The node requires config/ and node/ to exist (it does not create them)
+# but generates the full config.toml inside config/ itself on first boot.
+mkdir -p "$data_dir/config" "$data_dir/node" "$data_dir/home"
+chown -R "$app:$app" "$data_dir"
 
-ynh_script_progression "Pulling Freenet image (may take a few minutes)..."
-# ghcr.io connections can drop mid-layer ("unexpected EOF"); retries resume
-# completed layers, so a few attempts converge.
-pull_ok=0
-for i in 1 2 3 4 5; do
-    if docker compose -f "$install_dir/docker-compose.yml" pull; then
-        pull_ok=1
-        break
-    fi
-    ynh_print_warn "Image pull attempt $i failed — retrying..."
-    sleep 5
-done
-[ "$pull_ok" -eq 1 ] || ynh_die --message="Could not pull ghcr.io/freenet/freenet-core:latest after 5 attempts. Check connectivity to ghcr.io, then re-run the install."
+# NB: no config.toml seeding — the node's config is strictly schema-
+# validated and it generates a complete one on first boot. The keys we own
+# (transport port, API port, allowed Host) are pinned via CLI flags in the
+# systemd unit, which the node persists into its generated config.
 
 ynh_script_progression "Configuring systemd service..."
 ynh_config_add_systemd
 ynh_systemctl --service="$app" --action=start --log_path=systemd --timeout=300
 
 #=================================================
-# WAIT FOR THE NODE DASHBOARD TO ANSWER BEFORE
-# PROXYING IT (healthcheck = process alive + API up).
+# WAIT FOR THE NODE API BEFORE PROXYING IT
 #=================================================
 ynh_script_progression "Waiting for the node dashboard to come up..."
 waited=0
@@ -56,7 +41,7 @@ while [ "$waited" -lt 300 ]; do
     waited=$((waited + 5))
 done
 if [ "$waited" -ge 300 ]; then
-    ynh_die --message="Node dashboard did not answer on 127.0.0.1:$port within 300s. Check: docker logs $app"
+    ynh_die --message="Node dashboard did not answer on 127.0.0.1:$port within 300s. Check: journalctl -u $app"
 fi
 
 ynh_script_progression "Configuring nginx (SSO-gated node dashboard)..."
@@ -68,7 +53,7 @@ if [ -f "$YNH_APP_BASEDIR/doc/freenet.png" ]; then
     yunohost user permission update "$app.main" --logo "/usr/share/yunohost/applogos/$app.png" || true
 fi
 
-version=$(docker exec "$app" freenet --version 2>/dev/null | head -1 || true)
+version=$("$install_dir/freenet" --version 2>/dev/null | head -1 || true)
 ynh_print_warn "Freenet node installed${version:+ ($version)}. Dashboard: https://$domain$path (SSO-gated). Loopback API: http://127.0.0.1:$port"
 
-ynh_script_progression "IMPORTANT: forward UDP $peer_port on your router to this server's LAN address (TCP is not used by the transport), or peers cannot reach you directly and connectivity stays degraded."
+ynh_script_progression "IMPORTANT: forward UDP $port_peer on your router to this server's LAN address (TCP is not used by the transport), or peers cannot reach you directly and connectivity stays degraded."

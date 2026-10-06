@@ -1,7 +1,6 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-
 if [ "$path" != "/" ]; then
     ynh_die --message="The Freenet dashboard UI uses absolute URLs and only works at the root of a domain (path must be '/')."
 fi
@@ -14,11 +13,12 @@ rmdir "/etc/nginx/conf.d/$old_domain.d" 2>/dev/null || true
 ynh_app_setting_set --key=domain --value="$domain"
 ynh_app_setting_set --key=path --value="$path"
 
-# Re-render compose so FREENET_ALLOWED_HOST picks up the new hostname, then nginx.
-ynh_safe_rm "$install_dir/docker-compose.yml"
-ynh_config_add --template="docker-compose.yml" --destination="$install_dir/docker-compose.yml"
 ynh_config_add_nginx
 
+# Re-render the systemd unit: the API's Host allow-list and ports are
+# ExecStart flags there (the node copies them into its config on start).
+ynh_safe_rm "/etc/systemd/system/$app.service"
+ynh_config_add_systemd
 systemctl daemon-reload
 systemctl restart "$app"
 
