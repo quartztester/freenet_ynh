@@ -41,3 +41,4 @@ backups. Restoring a backup preserves the same node identity.
 | Few or no peers | UDP `__PORT_PEER__` not forwarded, or the domain's DNS record is Cloudflare-proxied (must be DNS-only for raw UDP). |
 | Port or config oddities | Ports and pinned settings are managed via package resources and ExecStart flags; avoid hand-editing node config — the strict schema can reject unknown keys. |
 | Checking why it restarted | `journalctl -u __APP__ -e` — exits with code 42/43 are the updater handshake and count as clean. |
+| Admin UI "Move the app to a different URL" accepts text after the `/` | The dashboard UI uses absolute URLs, so this app only works at the **root of a domain** — the path field is always empty by design. Moving to another domain (root) works; any path beyond `/` is rejected by the app's change-url script and nothing is moved. |
