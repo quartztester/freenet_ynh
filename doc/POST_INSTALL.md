@@ -4,12 +4,12 @@ The Freenet node is installed and running. This page summarizes what to check fi
 
 ## Access the dashboard
 
-**https://`__domain__`/** — gated behind YunoHost's SSO, so only users of your
+**https://`__DOMAIN__`/** — gated behind YunoHost's SSO, so only users of your
 portal can reach it. No second login is required when arriving through the portal.
 
 ## Required next step: open the peer port
 
-Forward port **`__port_peer__` (UDP)** on your internet box/router to this server.
+Forward port **`__PORT_PEER__` (UDP)** on your internet box/router to this server.
 With it, peers connect to your node directly; without it, connectivity relies
 entirely on hole-punching and the node contributes less to the network.
 

@@ -14,7 +14,7 @@ arriving through the portal, the dashboard needs no second login.
 
 | Purpose | Port | Notes |
 |---|---|---|
-| Peer transport | `__port_peer__` (UDP) | Forward on your router so peers connect to you directly instead of relying only on hole-punching. |
+| Peer transport | `__PORT_PEER__` (UDP) | Forward on your router so peers connect to you directly instead of relying only on hole-punching. |
 | Dashboard / node API | loopback only, port `__PORT__` | Never directly exposed; reachable exclusively through the SSO-gated nginx proxy. |
 
 ## Updates (automatic by design)
@@ -38,6 +38,6 @@ backups. Restoring a backup preserves the same node identity.
 |---|---|
 | Dashboard unreachable through SSO | Confirm `systemctl is-active __APP__` reports `active`; the API port is loopback-only by design, so only the nginx proxy can serve it. |
 | Node stopped and won't restart | A crash-looping node stops itself after 5 rapid restarts (upstream's rate limiter). Recover: `systemctl reset-failed __APP__ && systemctl start __APP__`. The self-heal update runs on every stop. |
-| Few or no peers | UDP `__port_peer__` not forwarded, or the domain's DNS record is Cloudflare-proxied (must be DNS-only for raw UDP). |
+| Few or no peers | UDP `__PORT_PEER__` not forwarded, or the domain's DNS record is Cloudflare-proxied (must be DNS-only for raw UDP). |
 | Port or config oddities | Ports and pinned settings are managed via package resources and ExecStart flags; avoid hand-editing node config — the strict schema can reject unknown keys. |
 | Checking why it restarted | `journalctl -u __APP__ -e` — exits with code 42/43 are the updater handshake and count as clean. |
