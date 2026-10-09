@@ -11,16 +11,14 @@ It shall NOT be edited by hand.
 Volunteer peer for the Freenet network (dashboard on an SSO-gated panel)
 
 [![🌐 Official app website](https://img.shields.io/badge/Official_app_website-darkgreen?style=for-the-badge)](https://freenet.org)
-[![Version: 0.2.142~ynh1](https://img.shields.io/badge/Version-0.2.142~ynh1-rgb(18,138,11)?style=for-the-badge)](https://ci-apps.yunohost.org/ci/apps/freenet/)
+[![Version: 0.2.142~ynh1](https://img.shields.io/badge/Version-0.2.142~ynh1-rgb(18,138,11)?style=for-the-badge)
 
 <div align="center">
-<a href="https://apps.yunohost.org/app/freenet"><img height="100px" src="https://github.com/YunoHost/yunohost-artwork/raw/refs/heads/main/badges/neopossum-badges/badge_more_info_on_the_appstore.svg"/></a>
-<a href="https://github.com/YunoHost-Apps/freenet_ynh/issues"><img height="100px" src="https://github.com/YunoHost/yunohost-artwork/raw/refs/heads/main/badges/neopossum-badges/badge_report_an_issue.svg"/></a>
+<a href="https://github.com/quartztester/freenet_ynh#readme"><img height="100px" src="https://github.com/YunoHost/yunohost-artwork/raw/refs/heads/main/badges/neopossum-badges/badge_more_info_on_the_appstore.svg"/></a>
+<a href="https://github.com/quartztester/freenet_ynh/issues"><img height="100px" src="https://github.com/YunoHost/yunohost-artwork/raw/refs/heads/main/badges/neopossum-badges/badge_report_an_issue.svg"/></a>
 </div>
 
 ## 📦 Developer info
-
-[![Automatic tests level](https://apps.yunohost.org/badge/cilevel/freenet)](https://ci-apps.yunohost.org/ci/apps/freenet/)
 
 🛠️ Upstream Freenet node repository: <https://github.com/freenet/freenet-core>
 
