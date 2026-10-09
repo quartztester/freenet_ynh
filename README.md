@@ -4,7 +4,7 @@ It shall NOT be edited by hand.
 -->
 
 <h1>
-  <img src="https://raw.githubusercontent.com/YunoHost/apps/main/logos/freenet.png" width="32px" alt="Logo of Freenet node">
+  <img src="doc/freenet.png" width="32px" alt="Logo of Freenet node">
   Freenet node, packaged for YunoHost
 </h1>
 
@@ -24,20 +24,13 @@ Volunteer peer for the Freenet network (dashboard on an SSO-gated panel)
 
 🛠️ Upstream Freenet node repository: <https://github.com/freenet/freenet-core>
 
-Pull request are welcome and should target the [`testing` branch](https://github.com/YunoHost-Apps/freenet_ynh/tree/testing).
-
-The `testing` branch can be tested using:
+Pull requests are welcome against the `main` branch of this fork; install the development state directly with:
 ```
 # fresh install:
-sudo yunohost app install https://github.com/YunoHost-Apps/freenet_ynh/tree/testing
+sudo yunohost app install https://github.com/quartztester/freenet_ynh
 
 # upgrade an existing install:
-sudo yunohost app upgrade freenet -u https://github.com/YunoHost-Apps/freenet_ynh/tree/testing
-```
-
-You can also switch to the testing branch to update from testing by default (as same as for APT when you chose to use a testing repos) with this command:
-```bash
-sudo yunohost app setting freenet upgrade_channel -v testing
+sudo yunohost app upgrade freenet -u https://github.com/quartztester/freenet_ynh
 ```
 
 ### 📚 App packaging documentation
