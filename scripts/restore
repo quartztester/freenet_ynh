@@ -15,6 +15,7 @@ source /usr/share/yunohost/helpers
 ynh_script_progression "Restoring systemd unit and node binary..."
 ynh_safe_rm "/etc/systemd/system/$app.service"
 ynh_restore "/etc/systemd/system/$app.service"
+yunohost service add "$app" --description="Freenet node" --needs_exposed_ports "$port_peer"
 
 #=================================================
 # RESTORE THE APP BINARY

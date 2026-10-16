@@ -32,6 +32,7 @@ fi
 ynh_script_progression "Re-rendering systemd and nginx configs..."
 ynh_safe_rm "/etc/systemd/system/$app.service"
 ynh_config_add_systemd
+yunohost service add "$app" --description="Freenet node" --needs_exposed_ports "$port_peer"
 
 domain=$(ynh_app_setting_get --key=domain || echo "")
 if [ -n "${domain:-}" ]; then
