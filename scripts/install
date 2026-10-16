@@ -1,13 +1,24 @@
 #!/bin/bash
+
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
 source /usr/share/yunohost/helpers
+
+#=================================================
+# CHECK PATH CONSTRAINT
+#=================================================
 
 if [ "${path:-/}" != "/" ]; then
     ynh_die --message="The Freenet dashboard uses absolute URLs and only works at a domain root — pick a (sub)domain with path '/'."
 fi
 
 #=================================================
-# NODE BINARY (official GitHub release, static musl)
+# NODE BINARY (OFFICIAL GITHUB RELEASE, STATIC MUSL)
 #=================================================
+
 ynh_script_progression "Installing the Freenet node binary..."
 ynh_setup_source --dest_dir="$install_dir"
 # The release tarball stores the binary without the exec bit.
@@ -24,6 +35,10 @@ chown -R "$app:$app" "$data_dir"
 # (transport port, API port, allowed Host) are pinned via CLI flags in the
 # systemd unit, which the node persists into its generated config.
 
+#=================================================
+# SYSTEM CONFIGURATION
+#=================================================
+
 ynh_script_progression "Configuring systemd service..."
 ynh_config_add_systemd
 ynh_systemctl --service="$app" --action=start --log_path=systemd --timeout=300
@@ -31,6 +46,7 @@ ynh_systemctl --service="$app" --action=start --log_path=systemd --timeout=300
 #=================================================
 # WAIT FOR THE NODE API BEFORE PROXYING IT
 #=================================================
+
 ynh_script_progression "Waiting for the node dashboard to come up..."
 waited=0
 while [ "$waited" -lt 300 ]; do
@@ -44,8 +60,16 @@ if [ "$waited" -ge 300 ]; then
     ynh_die --message="Node dashboard did not answer on 127.0.0.1:$port within 300s. Check: journalctl -u $app"
 fi
 
+#=================================================
+# CONFIGURE NGINX
+#=================================================
+
 ynh_script_progression "Configuring nginx (SSO-gated node dashboard)..."
 ynh_config_add_nginx
+
+#=================================================
+# SSO PORTAL LOGO
+#=================================================
 
 # Tile logo for the SSO portal (supported override for non-catalog apps)
 if [ -f "$YNH_APP_BASEDIR/doc/freenet.png" ]; then
@@ -53,7 +77,16 @@ if [ -f "$YNH_APP_BASEDIR/doc/freenet.png" ]; then
     yunohost user permission update "$app.main" --logo "/usr/share/yunohost/applogos/$app.png" || true
 fi
 
+#=================================================
+# FINAL NOTES
+#=================================================
+
 version=$("$install_dir/freenet" --version 2>/dev/null | head -1 || true)
 ynh_print_warn "Freenet node installed${version:+ ($version)}. Dashboard: https://$domain$path (SSO-gated). Loopback API: http://127.0.0.1:$port"
+
+#=================================================
+# END OF SCRIPT
+#=================================================
+
 
 ynh_script_progression "IMPORTANT: forward UDP $port_peer on your router to this server's LAN address (TCP is not used by the transport), or peers cannot reach you directly and connectivity stays degraded."

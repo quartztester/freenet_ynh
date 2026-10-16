@@ -1,19 +1,45 @@
 #!/bin/bash
+
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
 source /usr/share/yunohost/helpers
+
+#=================================================
+# CHECK PATH CONSTRAINT
+#=================================================
 
 if [ "$path" != "/" ]; then
     ynh_die --message="The Freenet dashboard UI uses absolute URLs and only works at the root of a domain (path must be '/')."
 fi
+
+#=================================================
+# REMOVE OLD NGINX CONFIGURATION
+#=================================================
 
 ynh_script_progression "Moving $app from $old_domain$old_path to $domain$path..."
 
 ynh_safe_rm "/etc/nginx/conf.d/$old_domain.d/$app.conf"
 rmdir "/etc/nginx/conf.d/$old_domain.d" 2>/dev/null || true
 
+#=================================================
+# UPDATE DOMAIN AND PATH SETTINGS
+#=================================================
+
 ynh_app_setting_set --key=domain --value="$domain"
 ynh_app_setting_set --key=path --value="$path"
 
+#=================================================
+# MODIFY URL IN NGINX CONF
+#=================================================
+
 ynh_config_add_nginx
+
+#=================================================
+# REAPPLY SYSTEM CONFIGURATION
+#=================================================
 
 # Re-render the systemd unit: the API's Host allow-list and ports are
 # ExecStart flags there (the node copies them into its config on start).
@@ -21,5 +47,9 @@ ynh_safe_rm "/etc/systemd/system/$app.service"
 ynh_config_add_systemd
 systemctl daemon-reload
 systemctl restart "$app"
+
+#=================================================
+# END OF SCRIPT
+#=================================================
 
 ynh_script_progression "Done. Dashboard: https://$domain$path (SSO-gated)."

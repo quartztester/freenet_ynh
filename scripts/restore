@@ -1,9 +1,24 @@
 #!/bin/bash
+
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+# Keep this path for calling _common.sh inside the execution's context of backup and restore scripts
+source ../settings/scripts/_common.sh
 source /usr/share/yunohost/helpers
+
+#=================================================
+# RESTORE SYSTEM CONFIGURATION
+#=================================================
 
 ynh_script_progression "Restoring systemd unit and node binary..."
 ynh_safe_rm "/etc/systemd/system/$app.service"
 ynh_restore "/etc/systemd/system/$app.service"
+
+#=================================================
+# RESTORE THE APP BINARY
+#=================================================
 
 # Binary was archived at its staged path (cwd during restore is the
 # backup staging dir); installs made before binary backup existed skip it
@@ -13,16 +28,33 @@ if [ -f "var/www/$app/freenet" ]; then
     chmod 0755 "$install_dir/freenet"
 fi
 
+#=================================================
+# RESTORE THE DATA DIRECTORY
+#=================================================
+
 ynh_restore "$data_dir"
 chown -R "$app:$app" "$data_dir" "$install_dir"
+
+#=================================================
+# RESTART THE APP SERVICE
+#=================================================
 
 ynh_script_progression "Restarting Freenet node..."
 systemctl daemon-reload
 systemctl restart "$app" || true
+
+#=================================================
+# RESTORE THE NGINX CONFIGURATION
+#=================================================
 
 # Re-render the custom nginx snippet (not part of the backup archive; on a
 # fresh machine the vhost dir may not even exist yet).
 domain=$(ynh_app_setting_get --key=domain || echo "")
 if [ -n "${domain:-}" ] && [ -d "/etc/nginx/conf.d/$domain.d" ]; then
     ynh_config_add_nginx
+
+#=================================================
+# END OF SCRIPT
+#=================================================
+
 fi

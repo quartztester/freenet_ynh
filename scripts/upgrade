@@ -1,5 +1,15 @@
 #!/bin/bash
+
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
 source /usr/share/yunohost/helpers
+
+#=================================================
+# DOWNLOAD, CHECK AND UNPACK SOURCE
+#=================================================
 
 ynh_script_progression "Installing the packaged node binary..."
 # The node self-updates in place between YunoHost upgrades; this overwrites
@@ -15,6 +25,10 @@ else
     ynh_print_warn "On-disk node $current_version is newer than packaged $packaged_version (self-update) — keeping it."
 fi
 
+#=================================================
+# REAPPLY SYSTEM CONFIGURATION
+#=================================================
+
 ynh_script_progression "Re-rendering systemd and nginx configs..."
 ynh_safe_rm "/etc/systemd/system/$app.service"
 ynh_config_add_systemd
@@ -24,10 +38,19 @@ if [ -n "${domain:-}" ]; then
     ynh_safe_rm "/etc/nginx/conf.d/$domain.d/$app.conf"
     ynh_config_add_nginx
 fi
+
+#=================================================
+# SSO PORTAL LOGO
+#=================================================
+
 if [ -f "$YNH_APP_BASEDIR/doc/freenet.png" ]; then
     cp "$YNH_APP_BASEDIR/doc/freenet.png" "/usr/share/yunohost/applogos/$app.png"
     yunohost user permission update "$app.main" --logo "/usr/share/yunohost/applogos/$app.png" || true
 fi
+
+#=================================================
+# RESTART SYSTEMD SERVICE
+#=================================================
 
 # The ExecStart flags (ports, allowed-host) live in the unit template and
 # are re-rendered above; the node persists them into its own config.toml
@@ -35,6 +58,10 @@ fi
 
 systemctl daemon-reload
 systemctl restart "$app"
+
+#=================================================
+# WAIT FOR THE NODE DASHBOARD
+#=================================================
 
 ynh_script_progression "Waiting for the node dashboard..."
 waited=0
@@ -46,5 +73,9 @@ while [ "$waited" -lt 300 ]; do
     waited=$((waited + 5))
 done
 [ "$waited" -ge 300 ] && ynh_print_warn "Dashboard not answering yet after 300s — check: journalctl -u $app"
+
+#=================================================
+# END OF SCRIPT
+#=================================================
 
 ynh_script_progression "Freenet upgrade complete."
