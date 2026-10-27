@@ -11,7 +11,7 @@ It shall NOT be edited by hand.
 Volunteer peer for the Freenet network (dashboard on an SSO-gated panel)
 
 [![🌐 Official app website](https://img.shields.io/badge/Official_app_website-darkgreen?style=for-the-badge)](https://freenet.org)
-![Version: 0.2.142~ynh1](https://img.shields.io/badge/Version-0.2.142~ynh1-rgb%2818,138,11%29?style=for-the-badge)
+![Version: 0.2.142~ynh2](https://img.shields.io/badge/Version-0.2.142~ynh2-rgb%2818,138,11%29?style=for-the-badge)
 
 <div align="center">
 <a href="https://github.com/quartztester/freenet_ynh#readme"><img height="100px" src="https://github.com/YunoHost/yunohost-artwork/raw/refs/heads/main/badges/neopossum-badges/badge_more_info_on_the_appstore.svg"/></a>
