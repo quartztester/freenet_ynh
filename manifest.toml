@@ -19,6 +19,7 @@ yunohost = ">= 12.0"
 helpers_version = "2.1"
 # Official release binaries exist for linux x86_64 and aarch64.
 architectures = ["amd64", "arm64"]
+# single instance: one node identity and one fixed openport per machine
 multi_instance = false
 ldap = "not_relevant"
 sso = "not_relevant"
