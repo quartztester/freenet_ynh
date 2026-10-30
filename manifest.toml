@@ -4,7 +4,7 @@ id = "freenet"
 name = "Freenet node"
 description.en = "Volunteer peer for the Freenet decentralized network"
 
-version = "0.2.142~ynh2"
+version = "0.2.152~ynh1"
 
 maintainers = []
 
@@ -71,10 +71,10 @@ ram.runtime = "300M"
     # NB: the tarballs contain a single bare 'freenet' file (no directory
     # prefix), so extraction must NOT strip components.
     in_subdir = false
-    amd64.url = "https://github.com/freenet/freenet-core/releases/download/v0.2.142/freenet-x86_64-unknown-linux-musl.tar.gz"
-    amd64.sha256 = "b098408bb706bb170970199c19a63faafee7ac2376e760a45cfbbc481be88425"
-    arm64.url = "https://github.com/freenet/freenet-core/releases/download/v0.2.142/freenet-aarch64-unknown-linux-musl.tar.gz"
-    arm64.sha256 = "0494bceaa998b7d8f09c6087051686a552a74aa3a6ceba75b920192d5a7af0e9"
+    amd64.url = "https://github.com/freenet/freenet-core/releases/download/v0.2.152/freenet-x86_64-unknown-linux-musl.tar.gz"
+    amd64.sha256 = "092192eec6ccc56c76d0150e1a4d535ba056e49a22a5ce87a96fe220c4d5eb20"
+    arm64.url = "https://github.com/freenet/freenet-core/releases/download/v0.2.152/freenet-aarch64-unknown-linux-musl.tar.gz"
+    arm64.sha256 = "e6a0450fe69fa774b1b9a3cba60258fb91145429c599ccfb17f832a3fd77c162"
 
     autoupdate.strategy = "latest_github_release"
     autoupdate.asset.amd64 = "freenet-x86_64-unknown-linux-musl.tar.gz"
