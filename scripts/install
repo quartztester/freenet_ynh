@@ -1,9 +1,9 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-if [ "${path:-/}" != "/" ]; then
-    ynh_die --message="The Freenet dashboard uses absolute URLs and only works at a domain root — pick a (sub)domain with path '/'."
-fi
+# Root-only by design: the dashboard uses absolute URLs. Kept as a plain
+# app setting so nginx templating (__PATH__) resolves to "/".
+path="/"
 
 #=================================================
 # NODE BINARY (official GitHub release, static musl)

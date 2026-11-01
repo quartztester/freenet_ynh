@@ -1,16 +1,12 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-if [ "$path" != "/" ]; then
-    ynh_die --message="The Freenet dashboard UI uses absolute URLs and only works at the root of a domain (path must be '/')."
-fi
-
-ynh_script_progression "Moving $app from $old_domain$old_path to $domain$path..."
+# Root-only app: path is fixed at "/", only the domain ever changes.
+ynh_script_progression "Moving $app from $old_domain to $domain..."
 
 ynh_safe_rm "/etc/nginx/conf.d/$old_domain.d/$app.conf"
 
 ynh_app_setting_set --key=domain --value="$domain"
-ynh_app_setting_set --key=path --value="$path"
 
 ynh_config_add_nginx
 
@@ -21,4 +17,4 @@ ynh_config_add_systemd
 systemctl daemon-reload
 systemctl restart "$app"
 
-ynh_script_progression "Done. Dashboard: https://$domain$path (SSO-gated)."
+ynh_script_progression "Done. Dashboard: https://$domain/ (SSO-gated)."

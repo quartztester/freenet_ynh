@@ -18,6 +18,9 @@ chown -R "$app:$app" "$data_dir" "$install_dir"
 
 ynh_script_progression "Restarting Freenet node..."
 systemctl daemon-reload
+# Enable or the CI post-step `systemctl isolate multi-user.target` kills the
+# restored-but-disabled unit before validation curls it.
+systemctl enable "$app" --quiet
 systemctl restart "$app" || true
 
 # Re-render the custom nginx snippet (not part of the backup archive; on a
