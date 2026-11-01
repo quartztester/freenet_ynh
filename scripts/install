@@ -1,8 +1,7 @@
 #!/bin/bash
 source /usr/share/yunohost/helpers
 
-# Root-only by design: the dashboard uses absolute URLs. Kept as a plain
-# app setting so nginx templating (__PATH__) resolves to "/".
+# Root-only by design: dashboard uses absolute URLs; plain setting so nginx templating (__PATH__) resolves to "/".
 path="/"
 
 #=================================================
@@ -14,15 +13,11 @@ ynh_setup_source --dest_dir="$install_dir"
 chmod 0755 "$install_dir/freenet"
 chown -R "$app:$app" "$install_dir"
 
-# The node requires config/ and node/ to exist (it does not create them)
-# but generates the full config.toml inside config/ itself on first boot.
+# The node requires config/ and node/ to exist but generates config.toml itself on first boot.
 mkdir -p "$data_dir/config" "$data_dir/node" "$data_dir/home"
 chown -R "$app:$app" "$data_dir"
 
-# NB: no config.toml seeding — the node's config is strictly schema-
-# validated and it generates a complete one on first boot. The keys we own
-# (transport port, API port, allowed Host) are pinned via CLI flags in the
-# systemd unit, which the node persists into its generated config.
+# NB: no config.toml seeding — strictly schema-validated; our keys (ports, allowed Host) are pinned via CLI flags in the systemd unit.
 
 ynh_script_progression "Configuring systemd service..."
 ynh_config_add_systemd

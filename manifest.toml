@@ -37,34 +37,27 @@ ram.runtime = "300M"
 [resources]
     [resources.system_user]
 
-    # Holds the node binary. The node's own updater replaces it in place
-    # (temp file + rename on the same filesystem), so this dir must stay
-    # app-writable — see systemd.service.
+    # Node's self-updater replaces the binary in place (temp+rename), so this dir must stay app-writable.
     [resources.install_dir]
 
     # Node identity, store and config — losing this loses node identity.
-    # Backed up and restored with the app by convention.
     [resources.data_dir]
 
     [resources.permissions]
         main.url = "/"
-        # The dashboard talks to its local API on the same origin; ssowat
-        # must not inject Basic creds. SSO still gates the URL.
+        # Dashboard talks to its local API same-origin; ssowat must not inject Basic creds (SSO still gates the URL).
         main.auth_header = false
 
     [resources.ports]
     # Dashboard/local API port — loopback-bound by the node, never exposed.
     main.default = 7509
-    # Transport port (UDP, hole-punched). Fixed so admins can set up a
-    # stable router forward; firewall open/close handled by this resource
-    # (setting: $port_peer).
+    # Transport port (UDP, hole-punched), fixed so admins can set a stable router forward (setting: $port_peer).
     peer.default = 31337
     peer.exposed = "UDP"
     peer.fixed = true
 
     [resources.sources.main]
-    # NB: the tarballs contain a single bare 'freenet' file (no directory
-    # prefix), so extraction must NOT strip components.
+    # NB: tarballs contain a single bare 'freenet' file, so extraction must NOT strip components.
     in_subdir = false
     amd64.url = "https://github.com/freenet/freenet-core/releases/download/v0.2.142/freenet-x86_64-unknown-linux-musl.tar.gz"
     amd64.sha256 = "b098408bb706bb170970199c19a63faafee7ac2376e760a45cfbbc481be88425"
