@@ -4,7 +4,7 @@ id = "freenet"
 name = "Freenet node"
 description.en = "Volunteer peer for the Freenet decentralized network"
 
-version = "0.2.142~ynh3"
+version = "0.2.142~ynh4"
 
 maintainers = []
 
