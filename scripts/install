@@ -77,7 +77,7 @@ ynh_config_add_nginx
 # Tile logo for the SSO portal (supported override for non-catalog apps)
 if [ -f "$YNH_APP_BASEDIR/doc/freenet.png" ]; then
     cp "$YNH_APP_BASEDIR/doc/freenet.png" "/usr/share/yunohost/applogos/$app.png"
-    yunohost user permission update "$app.main" --logo "/usr/share/yunohost/applogos/$app.png" || true
+    yunohost user permission update "$app" --logo "/usr/share/yunohost/applogos/$app.png" || true
 fi
 
 #=================================================
