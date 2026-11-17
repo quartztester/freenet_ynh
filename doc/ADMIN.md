@@ -1,5 +1,7 @@
 # Administering Freenet
 
+Single instance only (`multi_instance = false`): one node identity and one fixed openport per machine.
+
 The node is managed from its own web dashboard. YunoHost's SSO guards the door —
 arriving through the portal, the dashboard needs no second login.
 
